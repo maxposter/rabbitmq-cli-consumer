@@ -3,17 +3,16 @@ package consumer
 import (
 	"bytes"
 	"compress/zlib"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"os"
-    "os/signal"
-    "syscall"
 	"github.com/maxposter/rabbitmq-cli-consumer/command"
 	"github.com/maxposter/rabbitmq-cli-consumer/config"
 	"github.com/streadway/amqp"
 	"log"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 type Consumer struct {
@@ -37,37 +36,37 @@ func (c *Consumer) Consume() {
 
 	defer c.Connection.Close()
 	defer c.Channel.Close()
-	
+
 	needTerminate := false
 	inProgress := false
-	
+
 	termanateChan := make(chan os.Signal, 1)
-    signal.Notify(termanateChan, os.Interrupt)
-    signal.Notify(termanateChan, syscall.SIGTERM)
-	
+	signal.Notify(termanateChan, os.Interrupt)
+	signal.Notify(termanateChan, syscall.SIGTERM)
+
 	var termanate = func() {
 		c.InfLogger.Println("Terminated.")
 		os.Exit(1)
 	}
-	
-    go func() {
-        <-termanateChan
-		needTerminate = true;
+
+	go func() {
+		<-termanateChan
+		needTerminate = true
 		if inProgress {
 			c.InfLogger.Println("Waiting for correct conusmer termanation...")
-			needTerminate = true;
+			needTerminate = true
 		} else {
 			termanate()
 		}
-    }()
-	
+	}()
+
 	c.InfLogger.Println("Waiting for messages...")
 	for d := range msgs {
 		if needTerminate {
 			termanate()
 		}
-		inProgress = true;
-		
+		inProgress = true
+
 		input := d.Body
 		if c.Compression {
 			var b bytes.Buffer
@@ -83,14 +82,14 @@ func (c *Consumer) Consume() {
 			input = b.Bytes()
 		}
 
-		cmd := c.Factory.Create(base64.StdEncoding.EncodeToString(input))
-		if c.Executer.Execute(cmd) {
+		cmd := c.Factory.Create()
+		if c.Executer.Execute(cmd, input) {
 			d.Ack(true)
 		} else {
 			d.Nack(true, true)
 		}
-		
-		inProgress = false;
+
+		inProgress = false
 	}
 }
 
@@ -143,10 +142,10 @@ func New(cfg *config.Config, factory *command.CommandFactory, errLogger, infLogg
 	// Empty Exchange name means default, no need to declare
 	if "" != cfg.Exchange.Name {
 		infLogger.Printf("Declaring exchange \"%s\"...", cfg.Exchange.Name)
-		
-		argsTable := amqp.Table{};
+
+		argsTable := amqp.Table{}
 		if "" != cfg.Exchange.XDelayedType {
-			argsTable["x-delayed-type"] = cfg.Exchange.XDelayedType;
+			argsTable["x-delayed-type"] = cfg.Exchange.XDelayedType
 		}
 		err = ch.ExchangeDeclare(cfg.Exchange.Name, cfg.Exchange.Type, cfg.Exchange.Durable, cfg.Exchange.Autodelete, false, false, argsTable)
 

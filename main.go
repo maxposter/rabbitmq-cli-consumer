@@ -55,24 +55,24 @@ func main() {
 		if err != nil {
 			logger.Fatalf("Failed parsing configuration: %s\n", err)
 		}
-		
+
 		// override config parameters from flugs
-		host := c.String("host");
-		port := c.String("port");
-		user := c.String("user");
-		password := c.String("password");
-		
+		host := c.String("host")
+		port := c.String("port")
+		user := c.String("user")
+		password := c.String("password")
+
 		if "" != host {
-			cfg.RabbitMq.Host = host;
+			cfg.RabbitMq.Host = host
 		}
 		if "" != port {
-			cfg.RabbitMq.Port = port;
+			cfg.RabbitMq.Port = port
 		}
 		if "" != user {
-			cfg.RabbitMq.Username = user;
+			cfg.RabbitMq.Username = user
 		}
 		if "" != password {
-			cfg.RabbitMq.Password = password;
+			cfg.RabbitMq.Password = password
 		}
 
 		errLogger := log.New(io.MultiWriter(os.Stdout, os.Stderr), "", log.Ldate|log.Ltime)
